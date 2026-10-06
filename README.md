@@ -7,6 +7,15 @@
 
 <h1 align="center">Doctor CV</h1>
 
+<p align="center">English | <a href="README.id.md">Bahasa Indonesia</a></p>
+
+> [!IMPORTANT]
+> Doctor CV is still in development and is not ready for an official release. There is no hosted version
+> yet. You are welcome to try it on your own machine: follow [Getting started](#getting-started), then run
+> analyses with your own OpenRouter key in `.env.local`, or with a key from any supported provider in
+> Settings. Features, the storage format, and the interface can still change, so results saved in your
+> browser may not carry over to a later version.
+
 Upload a PDF CV, choose how to check it, and get a score with the exact lines to change. The app runs in
 English and Indonesian.
 
