@@ -84,8 +84,8 @@ hasil itu dibuat.
 
 ## Memulai
 
-Kebutuhan: Node.js 22.22.2 atau lebih baru di jalur 22, 24.15 atau lebih baru di jalur 24, atau 26 ke atas
-(rentang yang didukung lingkungan tes jsdom), serta npm. Dikembangkan dengan Node.js 24.18.
+Kebutuhan: Node.js 24.22.1 atau lebih baru di jalur 24, serta npm 10 atau lebih baru. Hanya jalur 24 yang
+didukung dan diuji. Dikembangkan dengan Node.js 24.22.1 dan npm 12.1.0.
 
 ```bash
 git clone https://github.com/Qidil/doctorcv.git

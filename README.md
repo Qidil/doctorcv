@@ -82,8 +82,8 @@ result keeps the language it was written in.
 
 ## Getting started
 
-Requirements: Node.js 22.22.2 or later on the 22 line, 24.15 or later on the 24 line, or 26 and up (the
-range the jsdom test environment supports), and npm. Developed on Node.js 24.18.
+Requirements: Node.js 24.22.1 or later on the 24 line, and npm 10 or later. Only the 24 line is supported and
+tested. Developed on Node.js 24.22.1 with npm 12.1.0.
 
 ```bash
 git clone https://github.com/Qidil/doctorcv.git
