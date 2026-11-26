@@ -16,7 +16,7 @@ import {
   type PdfPageInfo,
   type PdfRun,
 } from "./types";
-import { walkOperatorList, type FontInfo, type WalkedRun } from "./walker";
+import { GRAPHIC_MIN_SIDE, walkOperatorList, type FontInfo, type PaintedShape, type WalkedRun } from "./walker";
 
 const PDF_HEADER = "%PDF-";
 const HEADER_SEARCH_BYTES = 1024;
@@ -30,6 +30,7 @@ const MAX_RUNS_PER_PAGE = 20_000;
 const MAX_SHAPES_PER_PAGE = 5_000;
 /** The PDF specification's page size limit, 200 inches. */
 const MAX_PAGE_SIDE = 14_400;
+const HEADER_IMAGE_BAND = 0.25;
 
 function hasPdfHeader(data: Uint8Array): boolean {
   const head = String.fromCharCode(...data.subarray(0, HEADER_SEARCH_BYTES));
@@ -39,6 +40,26 @@ function hasPdfHeader(data: Uint8Array): boolean {
 function normalizeBox(view: readonly number[]): PdfBox {
   const [a = 0, b = 0, c = 0, d = 0] = view;
   return { x0: Math.min(a, c), y0: Math.min(b, d), x1: Math.max(a, c), y1: Math.max(b, d) };
+}
+
+function isQualifyingImage(shape: PaintedShape): boolean {
+  return (
+    shape.kind === "image" &&
+    shape.box.x1 - shape.box.x0 >= GRAPHIC_MIN_SIDE &&
+    shape.box.y1 - shape.box.y0 >= GRAPHIC_MIN_SIDE
+  );
+}
+
+function isHeaderImage(shape: PaintedShape, pageNumber: number, pageBox: PdfBox, rotation: PageRotation): boolean {
+  if (!isQualifyingImage(shape) || pageNumber !== 1 || rotation !== 0) return false;
+  const { x0, y0, x1, y1 } = shape.box;
+  const topBandStart = pageBox.y1 - (pageBox.y1 - pageBox.y0) * HEADER_IMAGE_BAND;
+  return (
+    x0 >= pageBox.x0 &&
+    x1 <= pageBox.x1 &&
+    y0 >= topBandStart &&
+    y1 <= pageBox.y1
+  );
 }
 
 /** `/Rotate` may be any multiple of 90, negative included; anything else counts as unrotated, as pdf.js does. */
@@ -176,6 +197,7 @@ export async function extractPdf(data: Uint8Array, options: ExtractOptions = {})
     const walkedRuns: ClassifiedRun[] = [];
     const textContentRuns: TextContentRun[] = [];
     const graphics = new Set<GraphicKind>();
+    let skippedHeaderImages = 0;
 
     for (let pageNumber = 1; pageNumber <= doc.numPages; pageNumber++) {
       const page = await doc.getPage(pageNumber);
@@ -190,7 +212,16 @@ export async function extractPdf(data: Uint8Array, options: ExtractOptions = {})
       if (walk.runs.length > MAX_RUNS_PER_PAGE || walk.shapes.length > MAX_SHAPES_PER_PAGE) {
         throw new PdfExtractionError("PDF_TOO_COMPLEX");
       }
-      walk.graphics.forEach((kind) => graphics.add(kind));
+      const rotation = normalizeRotation(page.rotate);
+      const headerImages = walk.shapes.filter((shape) => isHeaderImage(shape, pageNumber, box, rotation));
+      skippedHeaderImages += headerImages.length;
+      walk.graphics
+        .filter(
+          (kind) =>
+            kind !== "image" ||
+            walk.shapes.some((shape) => isQualifyingImage(shape) && !isHeaderImage(shape, pageNumber, box, rotation)),
+        )
+        .forEach((kind) => graphics.add(kind));
 
       const classified = walk.runs
         .map((run) => ({ run, text: cleanRunText(run.text), reasons: classifyRunVisibility(run, walk.shapes, box) }))
@@ -204,7 +235,7 @@ export async function extractPdf(data: Uint8Array, options: ExtractOptions = {})
         const kept = ocrLayer ? reasons.filter((reason) => reason !== "invisible-mode") : reasons;
         walkedRuns.push(toClassifiedRun(run, text, pageNumber, kept));
       }
-      pages.push({ pageNumber, box, rotation: normalizeRotation(page.rotate), ocrLayer });
+      pages.push({ pageNumber, box, rotation, ocrLayer });
 
       const content = await page.getTextContent();
       checkTime();
@@ -255,7 +286,7 @@ export async function extractPdf(data: Uint8Array, options: ExtractOptions = {})
       visibleText: assembled.visibleText,
       metadata: {
         typography: source === "operator-list" ? buildTypography(visibleRuns, pageBoxes) : null,
-        layout: source === "operator-list" ? buildLayout(visibleRuns, graphics, ocrPages) : null,
+        layout: source === "operator-list" ? buildLayout(visibleRuns, graphics, ocrPages, skippedHeaderImages) : null,
         hiddenText: summarizeHiddenText(runs, source === "operator-list"),
       },
     };

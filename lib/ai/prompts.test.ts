@@ -29,6 +29,8 @@ describe("buildSystemPrompt", () => {
       expect(prompt).toContain(`- ${id}:`);
     }
     expect(prompt).toContain("targetTextSnippet: salin persis");
+    expect(prompt).toContain("Tanda garis tegak (|) di antara keahlian sebaris adalah pemisah, bukan tabel.");
+    expect(prompt).toContain("dengan pemisah yang sejajar membentuk kolom");
     expect(prompt).toContain("dalam bahasa aslinya (jangan diterjemahkan)");
     expect(prompt).toContain("Jangan mengarang angka");
     expect(prompt).toContain('Jangan pakai label seperti "Contoh:"');
@@ -45,6 +47,8 @@ describe("buildSystemPrompt", () => {
       expect(prompt).toContain(`- ${id}:`);
     }
     expect(prompt).toContain("in the CV's own language (never translate it)");
+    expect(prompt).toContain("A vertical bar (|) used between inline skills is a separator, not a table.");
+    expect(prompt).toContain("whose separators align into columns");
     expect(prompt).toContain("Do not invent numbers");
     expect(prompt).toContain('Do not use labels such as "Example:"');
     expect(prompt).toContain("No greetings, openers, closers, or small talk.");

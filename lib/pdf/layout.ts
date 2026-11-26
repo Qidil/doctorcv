@@ -227,11 +227,17 @@ function detectColumns(lines: readonly Line[]): number {
   if (lines.length < COLUMN_MIN_LINES_PER_CLUSTER) {
     return 1;
   }
-  const samples: ColumnSample[] = lines.flatMap((line, lineIndex) =>
-    line.runs
-      .filter((run) => /\S/.test(run.text))
-      .map((run) => ({ x: run.x, end: run.x + run.width, line: lineIndex, text: run.text })),
-  );
+  const samples: ColumnSample[] = [];
+  lines.forEach((line, lineIndex) => {
+    const runs = line.runs.filter((run) => /\S/.test(run.text)).sort((a, b) => a.x - b.x);
+    let end: number | null = null;
+    for (const run of runs) {
+      if (end === null || run.x - end > COLUMN_GAP_THRESHOLD) {
+        samples.push({ x: run.x, end: run.x + run.width, line: lineIndex, text: run.text });
+      }
+      end = end === null ? run.x + run.width : Math.max(end, run.x + run.width);
+    }
+  });
   samples.sort((a, b) => a.x - b.x);
   const clusters: Cluster[] = [];
   for (const sample of samples) {
@@ -362,10 +368,17 @@ export function buildLayout(
   runs: readonly LayoutRun[],
   graphics: ReadonlySet<GraphicKind>,
   ocrPages: readonly number[],
+  skippedHeaderImages: number,
 ): LayoutMetadata {
   let columnCount = 1;
   for (const pageRuns of byPage(runs.filter((run) => /\S/.test(run.text))).values()) {
     columnCount = Math.max(columnCount, detectColumns(groupLines(pageRuns)));
   }
-  return { columnCount, hasGraphics: graphics.size > 0, graphics: [...graphics], ocrPages: [...ocrPages] };
+  return {
+    columnCount,
+    hasGraphics: graphics.size > 0,
+    graphics: [...graphics],
+    skippedHeaderImages,
+    ocrPages: [...ocrPages],
+  };
 }

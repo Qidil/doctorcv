@@ -88,6 +88,7 @@ const SUGGESTION_LIMIT = 3;
 const MISSING_LIST_LIMIT = 15;
 const SNIPPET_MAX_LENGTH = 80;
 const TABLE_ROW_PIPES = 2;
+const TABLE_PIPE_ALIGNMENT_TOLERANCE = 4;
 const PHONE_MIN_DIGITS = 9;
 
 const TITLE_SIZE_MIN = 14;
@@ -240,16 +241,25 @@ function hasKeyword(text: string, keyword: string): boolean {
   return new RegExp(`(?<![\\w])${escapeRegExp(keyword)}(?![\\w])`).test(text);
 }
 
-function pipeCount(line: string): number {
-  return (line.match(/\|/g) ?? []).length;
+function pipePositions(line: string): number[] {
+  return [...line.matchAll(/\|/g)].map((match) => match.index);
 }
 
 /** A table has at least two rows; one line such as "email | phone | city" is a contact line. */
 function hasTable(lines: readonly string[]): boolean {
   const rows = lines.map((line) => line.trim()).filter(Boolean);
-  return rows.some(
-    (row, index) => index > 0 && pipeCount(row) >= TABLE_ROW_PIPES && pipeCount(rows[index - 1]) >= TABLE_ROW_PIPES,
-  );
+  return rows.some((row, index) => {
+    if (index === 0) return false;
+    const positions = pipePositions(row);
+    const previousPositions = pipePositions(rows[index - 1]);
+    return (
+      positions.length >= TABLE_ROW_PIPES &&
+      positions.length === previousPositions.length &&
+      positions.every(
+        (position, column) => Math.abs(position - previousPositions[column]) <= TABLE_PIPE_ALIGNMENT_TOLERANCE,
+      )
+    );
+  });
 }
 
 function hasPhoneNumber(cv: string): boolean {
@@ -407,6 +417,9 @@ function checkFormatting(ctx: CheckContext, metadata: PdfMetadata | null, typogr
 
   const notApplicable = metadata === null || metadata.typography === null || metadata.layout === null;
   const sentences = [issues.length === 0 ? text.ok : ctx.t.needsFixing(issues.join(", "))];
+  if (layout !== null && layout.skippedHeaderImages > 0) {
+    sentences.push(text.skippedHeaderImages(layout.skippedHeaderImages));
+  }
   if (notApplicable) {
     sentences.push(text.typographyUnavailable);
   }

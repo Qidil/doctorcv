@@ -133,6 +133,7 @@ export interface LayoutMetadata {
   columnCount: number;
   hasGraphics: boolean;
   graphics: GraphicKind[];
+  skippedHeaderImages: number;
   ocrPages: number[];
 }
 

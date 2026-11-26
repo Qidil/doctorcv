@@ -91,6 +91,7 @@ describe("real CV samples (local only)", () => {
           `${result.metadata.typography?.fontFamilies.length ?? 0} font families`,
           `columns ${layout?.columnCount ?? "n/a"}`,
           `graphics [${layout?.graphics.join(", ") ?? "n/a"}]`,
+          `skipped header images ${layout?.skippedHeaderImages ?? "n/a"}`,
           `ocr pages ${layout?.ocrPages.length ?? "n/a"}`,
           `score A ${modeA.overallScore}`,
           `score B ${modeB.overallScore}`,

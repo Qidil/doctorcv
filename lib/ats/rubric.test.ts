@@ -100,7 +100,7 @@ const CLEAN_TYPOGRAPHY: TypographyMetadata = {
   italicRatio: 0,
 };
 
-const CLEAN_LAYOUT: LayoutMetadata = { columnCount: 1, hasGraphics: false, graphics: [], ocrPages: [] };
+const CLEAN_LAYOUT: LayoutMetadata = { columnCount: 1, hasGraphics: false, graphics: [], skippedHeaderImages: 0, ocrPages: [] };
 
 const CLEAN_METADATA: PdfMetadata = { typography: CLEAN_TYPOGRAPHY, layout: CLEAN_LAYOUT, hiddenText: NO_HIDDEN_TEXT };
 
@@ -409,6 +409,17 @@ describe("formatting (BR-05)", () => {
     expect(formattingScore(contactLine)).toBe(100);
   });
 
+  it("does not treat wrapped pipe-separated skills as a table", () => {
+    const skills = [
+      "Keahlian Utama dan Personal",
+      "Full-Stack Development | Frontend Development | Backend Development | Web Application Development",
+      "Development | REST API Integration | Database Management | SQL | Authentication dan Authorization",
+      "| Role-Based Access Control | Website Maintenance | Website Performance Optimization | Debugging |",
+    ].join("\n");
+
+    expect(formattingScore(`${SAMPLE_CV}\n${skills}`)).toBe(100);
+  });
+
   it("does not read year ranges as a phone number", () => {
     const cv = [
       ...STRONG_CV_LINES.filter((line) => !line.startsWith("+62")),
@@ -483,6 +494,30 @@ describe("formatting (BR-05)", () => {
     expect(formatting.score).toBe(expected);
     expect(formatting.status).toBe(statusFor(expected));
     expect(formatting.detail).toContain(phrase);
+  });
+
+  it.each([
+    ["en", "The system skipped 1 header image and did not score it"],
+    ["id", "Sistem melewati 1 gambar di bagian atas halaman pertama dan tidak menilainya"],
+  ] as const)("reports a skipped header image in %s without a score penalty", (language, phrase) => {
+    const formatting = check(
+      analyzeCv(SAMPLE_CV, SAMPLE_JD, withLayout({ skippedHeaderImages: 1 }), language),
+      "formatting",
+    );
+
+    expect(formatting.score).toBe(100);
+    expect(formatting.detail).toContain(phrase);
+    expect(formatting.detail).not.toContain("Needs fixing");
+    expect(formatting.detail).not.toContain("Perlu diperbaiki");
+  });
+
+  it("uses plural wording when it skips multiple header images", () => {
+    const formatting = check(
+      analyzeCv(SAMPLE_CV, SAMPLE_JD, withLayout({ skippedHeaderImages: 2 }), "en"),
+      "formatting",
+    );
+
+    expect(formatting.detail).toContain("The system skipped 2 header images and did not score them");
   });
 
   it("notes OCR pages without changing the score", () => {

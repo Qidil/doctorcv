@@ -39,6 +39,7 @@ export interface RubricText {
     tabs: string;
     twoColumns: string;
     graphics: (list: string) => string;
+    skippedHeaderImages: (count: number) => string;
     ok: string;
     typographyUnavailable: string;
     hiddenText: string;
@@ -120,10 +121,12 @@ const EN: RubricText = {
     noEmail: "no email address",
     noPhone: "no phone number",
     noBullets: "no bullet points",
-    table: "a table or columns built with the | character",
+    table: "a text table with aligned columns",
     tabs: "a layout built with tabs",
     twoColumns: "a 2-column layout",
     graphics: (list) => `graphics an ATS cannot read (${list})`,
+    skippedHeaderImages: (count) =>
+      `The system skipped ${count} header image${count === 1 ? "" : "s"} and did not score ${count === 1 ? "it" : "them"}`,
     ok: "Easy for an ATS to read: email, phone number, bullet points, and a reasonable length.",
     typographyUnavailable: "Typography and layout cannot be assessed for this PDF.",
     hiddenText: "The PDF contains text that cannot be seen. That text was left out of the analysis and does not affect the score.",
@@ -271,10 +274,11 @@ const ID: RubricText = {
     noEmail: "belum ada email",
     noPhone: "belum ada nomor telepon",
     noBullets: "belum ada bullet point",
-    table: "ada tabel atau teks berkolom dengan tanda |",
+    table: "ada tabel teks dengan kolom yang sejajar",
     tabs: "ada tata letak dengan tab",
     twoColumns: "tata letak 2 kolom",
     graphics: (list) => `ada grafis yang tidak terbaca ATS (${list})`,
+    skippedHeaderImages: (count) => `Sistem melewati ${count} gambar di bagian atas halaman pertama dan tidak menilainya`,
     ok: "Mudah dibaca ATS: ada email, nomor telepon, bullet point, dan panjang CV wajar.",
     typographyUnavailable: "Tipografi dan tata letak tidak dapat dinilai untuk PDF ini.",
     hiddenText: "Ada teks yang tidak terlihat di PDF. Teks itu tidak ikut dianalisis dan tidak memengaruhi skor.",

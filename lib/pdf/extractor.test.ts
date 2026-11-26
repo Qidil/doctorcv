@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { chooseTextSource, extractPdf } from "./extractor";
+import { buildLayout, type LayoutRun } from "./layout";
 import { toPdfExtractionError } from "./pdfjs";
 import {
   FILLER_LINE,
@@ -162,6 +163,18 @@ describe("extractPdf layout metadata", () => {
     expect(result.metadata.layout?.columnCount).toBe(2);
   });
 
+  it("does not treat a contiguous mid-line run as a second column", () => {
+    const runs: LayoutRun[] = Array.from({ length: 12 }, (_, index) => {
+      const y = 740 - index * 20;
+      return [
+        { text: "Long sentence continues", pageNumber: 1, x: 72, y, width: 108, fontSize: 11, fontFamily: "Helvetica", bold: false, italic: false, hidden: false },
+        { text: "without a new column", pageNumber: 1, x: 180, y, width: 92, fontSize: 11, fontFamily: "Helvetica", bold: false, italic: false, hidden: false },
+      ];
+    }).flat();
+
+    expect(buildLayout(runs, new Set(), [], 0).columnCount).toBe(1);
+  });
+
   it("does not treat a right-aligned header contact as a second column", async () => {
     const result = await extract(
       [
@@ -252,6 +265,34 @@ describe("extractPdf layout metadata", () => {
 
     expect(result.metadata.layout?.graphics).toEqual(expected);
     expect(result.metadata.layout?.hasGraphics).toBe(expected.length > 0);
+  });
+
+  it("skips only an image wholly inside the first-page header band", async () => {
+    const result = await extract(
+      ["q 50 0 0 50 50 650 cm /Im1 Do Q", FILLER_LINE].join("\n"),
+      { xObjects: { Im1: GREY_IMAGE_XOBJECT } },
+    );
+
+    expect(result.metadata.layout).toMatchObject({ graphics: [], hasGraphics: false, skippedHeaderImages: 1 });
+  });
+
+  it("does not skip an image on a rotated first page", async () => {
+    const result = await extractPdf(
+      makePdf([{ content: "q 50 0 0 50 50 650 cm /Im1 Do Q\n" + FILLER_LINE, rotate: 90 }], {
+        xObjects: { Im1: GREY_IMAGE_XOBJECT },
+      }),
+    );
+
+    expect(result.metadata.layout).toMatchObject({ graphics: ["image"], hasGraphics: true, skippedHeaderImages: 0 });
+  });
+
+  it.each([
+    ["below the header band", ["q 50 0 0 50 50 540 cm /Im1 Do Q", FILLER_LINE]],
+    ["on the next page", [FILLER_LINE, "q 50 0 0 50 50 650 cm /Im1 Do Q\n" + FILLER_LINE]],
+  ])("does not skip an image %s", async (_placement, pages) => {
+    const result = await extract(pages, { xObjects: { Im1: GREY_IMAGE_XOBJECT } });
+
+    expect(result.metadata.layout).toMatchObject({ graphics: ["image"], hasGraphics: true, skippedHeaderImages: 0 });
   });
 
   it("measures typography from the visible text using the fonts' own flags", async () => {

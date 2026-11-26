@@ -79,7 +79,7 @@ const PROMPT_TEXT: Readonly<Record<Language, PromptText>> = {
     },
     commonChecks: [
       "- sections: check for Summary, Experience, Education, and Skills sections. Name the sections that are present and those that are missing.",
-      "- formatting: judge from the text only: clear section headings, a sensible order, no text tables. The system scores the PDF's physical layout separately.",
+      "- formatting: judge from the text only: clear section headings, a sensible order, and real text tables whose separators align into columns. A vertical bar (|) used between inline skills is a separator, not a table. The system scores the PDF's physical layout separately.",
       "- quantified: look for achievements with numbers (percentages, counts, time, cost) in experience and projects. Name the metrics present, or state that there are none.",
       "- readability: judge concise sentences, structured bullet points, and restrained wording.",
     ],
@@ -140,7 +140,7 @@ const PROMPT_TEXT: Readonly<Record<Language, PromptText>> = {
     },
     commonChecks: [
       "- sections: periksa bagian Ringkasan, Pengalaman, Pendidikan, dan Keahlian. Sebut bagian yang ada dan yang tidak ada.",
-      "- formatting: nilai dari teks saja: judul bagian jelas, urutan wajar, tanpa tabel teks. Tata letak fisik PDF dinilai terpisah oleh sistem.",
+      "- formatting: nilai dari teks saja: judul bagian jelas, urutan wajar, dan tabel teks yang nyata dengan pemisah yang sejajar membentuk kolom. Tanda garis tegak (|) di antara keahlian sebaris adalah pemisah, bukan tabel. Tata letak fisik PDF dinilai terpisah oleh sistem.",
       "- quantified: cari pencapaian dengan angka (persen, jumlah, waktu, biaya) di pengalaman dan proyek. Sebut metrik yang ada, atau tulis bahwa tidak ada.",
       "- readability: nilai kalimat yang ringkas, bullet point yang terstruktur, dan istilah yang tidak berlebihan.",
     ],

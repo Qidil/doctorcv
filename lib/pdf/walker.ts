@@ -110,7 +110,7 @@ const BAR_SLOT_TOLERANCE = 1;
 /** Skill bars in a list sit closer than this; accents under headings sit a whole section apart. */
 const BAR_STACK_MAX_GAP = 36;
 /** Images and gradients below this on either side are icons, spacers, or lines (P2-D5). */
-const GRAPHIC_MIN_SIDE = 24;
+export const GRAPHIC_MIN_SIDE = 24;
 
 const IMAGE_OPS = new Set([
   "paintImageXObject",
