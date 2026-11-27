@@ -22,6 +22,8 @@ export interface AnalyzeConfig {
   upstash: { url: string; token: string } | null;
   /** ADR-009: custom endpoints may use plain HTTP and private or loopback hosts. Off unless set to true. */
   allowPrivateEndpoints: boolean;
+  /** Only enable when ingress overwrites forwarded client headers. */
+  trustedProxyHeaders: boolean;
   production: boolean;
 }
 
@@ -55,6 +57,7 @@ export function readConfig(env: Env = process.env): AnalyzeConfig {
     quotaSecret: text(env, "QUOTA_HASH_SECRET"),
     upstash: url && token ? { url: url.replace(/\/+$/, ""), token } : null,
     allowPrivateEndpoints: /^(true|1)$/i.test(env.ALLOW_PRIVATE_ENDPOINTS?.trim() ?? ""),
+    trustedProxyHeaders: /^(true|1)$/i.test(env.TRUSTED_PROXY_HEADERS?.trim() ?? ""),
     production: env.NODE_ENV === "production",
   };
 }

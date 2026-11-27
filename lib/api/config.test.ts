@@ -13,6 +13,7 @@ describe("readConfig", () => {
       quotaSecret: null,
       upstash: null,
       allowPrivateEndpoints: false,
+      trustedProxyHeaders: false,
       production: false,
     });
   });
@@ -42,6 +43,7 @@ describe("readConfig", () => {
       quotaSecret: "secret",
       upstash: { url: "https://db.upstash.io", token: "token" },
       allowPrivateEndpoints: true,
+      trustedProxyHeaders: false,
       production: true,
     });
   });
@@ -51,6 +53,11 @@ describe("readConfig", () => {
       expect(readConfig({ ALLOW_PRIVATE_ENDPOINTS: value }).allowPrivateEndpoints).toBe(false);
     }
     expect(readConfig({ ALLOW_PRIVATE_ENDPOINTS: "1" }).allowPrivateEndpoints).toBe(true);
+  });
+
+  it("requires explicit opt-in for ingress-provided client identity", () => {
+    expect(readConfig({ TRUSTED_PROXY_HEADERS: "true" }).trustedProxyHeaders).toBe(true);
+    expect(readConfig({ TRUSTED_PROXY_HEADERS: "yes" }).trustedProxyHeaders).toBe(false);
   });
 
   it("ignores numbers that are not positive integers", () => {

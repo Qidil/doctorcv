@@ -96,7 +96,7 @@ export async function POST(request: Request): Promise<Response> {
         customModel: textField(form, ANALYZE_FIELDS.customModel),
         customBaseUrl: textField(form, ANALYZE_FIELDS.customBaseUrl),
         authorization: request.headers.get("authorization"),
-        clientIp: clientIpFrom(request.headers),
+         clientIp: clientIpFrom(request.headers, config.trustedProxyHeaders),
         language,
         signal: request.signal,
       },

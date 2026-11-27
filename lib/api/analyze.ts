@@ -414,7 +414,10 @@ export function defaultQuotaStore(config: AnalyzeConfig): QuotaStore | null {
 }
 
 /** T8: on Vercel both headers are set by the platform, so the client cannot spoof them. */
-export function clientIpFrom(headers: Headers): string | null {
+export function clientIpFrom(headers: Headers, trustedProxyHeaders = false): string | null {
+  if (!trustedProxyHeaders) {
+    return null;
+  }
   const forwarded = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   return forwarded || headers.get("x-real-ip")?.trim() || null;
 }

@@ -50,6 +50,7 @@ const CONFIG: AnalyzeConfig = {
   quotaSecret: "test-secret",
   upstash: null,
   allowPrivateEndpoints: false,
+  trustedProxyHeaders: false,
   production: false,
 };
 
@@ -618,13 +619,14 @@ describe("fitDocument (response size)", () => {
 });
 
 describe("request helpers", () => {
-  it("reads the client IP from x-forwarded-for, then x-real-ip", () => {
-    expect(clientIpFrom(new Headers({ "x-forwarded-for": "203.0.113.5, 10.0.0.1", "x-real-ip": "198.51.100.3" }))).toBe(
+  it("ignores forwarded client identity unless trusted ingress is enabled", () => {
+    const headers = new Headers({ "x-forwarded-for": "203.0.113.5, 10.0.0.1", "x-real-ip": "198.51.100.3" });
+    expect(clientIpFrom(headers)).toBeNull();
+    expect(clientIpFrom(headers, true)).toBe(
       "203.0.113.5",
     );
-    expect(clientIpFrom(new Headers({ "x-real-ip": "198.51.100.3" }))).toBe("198.51.100.3");
-    expect(clientIpFrom(new Headers({ "x-forwarded-for": "2001:db8::1, 10.0.0.1" }))).toBe("2001:db8::1");
-    expect(clientIpFrom(new Headers())).toBeNull();
+    expect(clientIpFrom(new Headers({ "x-real-ip": "198.51.100.3" }), true)).toBe("198.51.100.3");
+    expect(clientIpFrom(new Headers({ "x-forwarded-for": "2001:db8::1, 10.0.0.1" }), true)).toBe("2001:db8::1");
   });
 
   it("picks Upstash when configured, a shared memory counter outside production, and nothing in production", () => {

@@ -99,6 +99,11 @@ describe("provider answers", () => {
     await expect(outcome("groq", completion("{", "length"))).resolves.toEqual({ kind: "truncated", partial: "{" });
   });
 
+  it("rejects oversized fixed-provider response bodies before parsing", async () => {
+    const body = new Uint8Array(2 * 1024 * 1024 + 1);
+    await expect(outcome("openai", new Response(body))).resolves.toEqual({ kind: "unavailable" });
+  });
+
   it("keeps OpenRouter's Phase 3 mapping, 403 included", async () => {
     await expect(outcome("openrouter", new Response("", { status: 401 }), "server")).resolves.toEqual({
       kind: "stop",

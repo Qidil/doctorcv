@@ -1,5 +1,6 @@
 import type { ApiErrorCode, KeyProvider } from "@/types/api";
 import type { ChatMessage } from "./prompts";
+import { MAX_RESPONSE_BYTES } from "./safe-fetch";
 
 export const OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions";
 export const ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages";
@@ -55,8 +56,31 @@ const NO_CREDIT_PATTERN =
   /insufficient_quota|insufficient balance|credit balance|out of credits|no credits|doesn't have any credits/i;
 
 async function bodyText(response: Response): Promise<string> {
+  return readLimitedText(response);
+}
+
+async function readLimitedText(response: Response): Promise<string> {
   try {
-    return await response.text();
+    if (response.body === null) {
+      return "";
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    const chunks: string[] = [];
+    let size = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) {
+        chunks.push(decoder.decode());
+        return chunks.join("");
+      }
+      size += value.byteLength;
+      if (size > MAX_RESPONSE_BYTES) {
+        await reader.cancel().catch(() => undefined);
+        throw new Error("Provider response exceeded the response limit.");
+      }
+      chunks.push(decoder.decode(value, { stream: true }));
+    }
   } catch {
     return "";
   }
@@ -116,7 +140,7 @@ async function readChatCompletion(response: Response, provider: KeyProvider, key
   }
   let body: ChatCompletionBody;
   try {
-    body = (await response.json()) as ChatCompletionBody;
+    body = JSON.parse(await readLimitedText(response)) as ChatCompletionBody;
   } catch {
     return { kind: "unavailable" };
   }
@@ -201,7 +225,7 @@ const anthropic: ProviderAdapter = {
     }
     let body: AnthropicBody;
     try {
-      body = (await response.json()) as AnthropicBody;
+      body = JSON.parse(await readLimitedText(response)) as AnthropicBody;
     } catch {
       return { kind: "unavailable" };
     }
