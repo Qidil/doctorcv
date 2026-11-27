@@ -6,6 +6,7 @@ import { LandingHero } from "./hero";
 import { LandingEngineExplainer } from "./engine-explainer";
 import { LandingRubricTransparency } from "./rubric-transparency";
 import { LandingPrivacyByok } from "./privacy-byok";
+import { LandingProviderGuidance } from "./provider-guidance";
 import { LandingDisclaimerNotice } from "./disclaimer-notice";
 import { LandingFaq } from "./faq";
 import { LandingFooter } from "./footer";
@@ -30,6 +31,9 @@ export function LandingPage({ version }: { version: string }) {
         <DrawablyDivider className="mx-auto max-w-6xl" />
         <Reveal>
           <LandingPrivacyByok />
+        </Reveal>
+        <Reveal>
+          <LandingProviderGuidance />
         </Reveal>
         <Reveal>
           <LandingDisclaimerNotice />

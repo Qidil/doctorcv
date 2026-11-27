@@ -30,6 +30,7 @@ describe("Landing Page Components (FEAT-13, BR-14)", () => {
     expect(screen.getByRole("heading", { name: /How the Engine Works/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Evaluation Rubric & AI Constraints/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Simulation Notice & Disclaimer/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Bring your own AI key/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Frequently Asked Questions/ })).toBeInTheDocument();
   });
 
@@ -42,6 +43,7 @@ describe("Landing Page Components (FEAT-13, BR-14)", () => {
     expect(screen.getByRole("heading", { name: /Bagaimana Mesin Ini Bekerja/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Aspek Penilaian & Batasan Ketat AI/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Pemberitahuan Simulasi & Penafian Resmi/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Pakai API key AI sendiri/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Pertanyaan yang Sering Diajukan/ })).toBeInTheDocument();
   });
 
@@ -63,6 +65,7 @@ describe("Landing Page Components (FEAT-13, BR-14)", () => {
     expect(drawer.getByRole("link", { name: "How It Works" })).toHaveAttribute("href", "#how-it-works");
     expect(drawer.getByRole("link", { name: "Scoring Rubric" })).toHaveAttribute("href", "#rubric");
     expect(drawer.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "#privacy");
+    expect(drawer.getByRole("link", { name: "AI Providers" })).toHaveAttribute("href", "#providers");
     expect(drawer.getByRole("link", { name: "FAQ" })).toHaveAttribute("href", "#faq");
     expect(drawer.getByRole("button", { name: "Open Reviewer" })).toBeInTheDocument();
   });

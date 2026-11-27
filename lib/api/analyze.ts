@@ -294,9 +294,20 @@ export async function runAnalysis(input: AnalyzeInput, deps: AnalyzeDependencies
   const startedAt = now();
   const request = validate(input);
   const { config } = deps;
+  const personal = request.personalKey !== null;
+  const provider = personal ? request.provider : config.serverProvider;
+  const baseUrl = personal
+    ? request.baseUrl
+    : provider === "custom"
+      ? parseCustomBaseUrl(config.serverBaseUrl)?.href ?? null
+      : null;
+  const firstModel = personal ? request.customModel ?? config.primaryModel : config.primaryModel;
+  if (firstModel === "" || (provider === "custom" && baseUrl === null)) {
+    throw new ApiError("INVALID_INPUT", { keyOwner: personal ? "user" : "server" });
+  }
   // Refused here as well, so a plain-HTTP address costs no extraction when the server does not allow it.
-  if (request.baseUrl?.startsWith("http:") && !config.allowPrivateEndpoints) {
-    throw new ApiError("INVALID_INPUT", { keyOwner: "user" });
+  if (baseUrl?.startsWith("http:") && !config.allowPrivateEndpoints) {
+    throw new ApiError("INVALID_INPUT", { keyOwner: personal ? "user" : "server" });
   }
 
   const builtIn = request.personalKey === null ? builtInKey(deps, input.clientIp, startedAt) : null;
@@ -318,7 +329,7 @@ export async function runAnalysis(input: AnalyzeInput, deps: AnalyzeDependencies
 
   try {
     const { signal } = input;
-    await limitRequests(deps, input.clientIp, startedAt, request.provider);
+    await limitRequests(deps, input.clientIp, startedAt, provider);
 
     const pdfBytes = new Uint8Array(await request.file.arrayBuffer());
     const extraction = await extractPdf(pdfBytes, { timeoutMs: EXTRACTION_TIMEOUT_MS });
@@ -336,25 +347,25 @@ export async function runAnalysis(input: AnalyzeInput, deps: AnalyzeDependencies
     if (apiKey === undefined) {
       throw new ApiError("SERVICE_NOT_CONFIGURED");
     }
-    const firstModel = request.personalKey !== null && request.customModel !== null ? request.customModel : config.primaryModel;
     // ADR-009: another provider runs only the user's model, a second time only after a transient failure.
-    const singleModel = request.personalKey !== null && request.provider !== "openrouter" ? request.customModel : null;
+    const singleModel = personal ? request.customModel : null;
     // The chain starts first so its request is on the wire before rendering takes the thread.
     const chainPromise = runModelChain<AiReport>({
       apiKey,
       keyOwner: request.personalKey === null ? "server" : "user",
-      provider: PROVIDERS[request.provider],
-      baseUrl: request.baseUrl,
+      provider: PROVIDERS[provider],
+      baseUrl,
       models:
         singleModel !== null
           ? [singleModel, singleModel]
           : [firstModel, ...config.fallbackModels.filter((model) => model !== firstModel)],
       stopOnModelError: singleModel !== null,
-      budgetMs: config.budgetMs,
+      budgetMs: provider === "custom" ? config.customBudgetMs : config.budgetMs,
+      maxCallMs: provider === "custom" ? config.customBudgetMs / 2 : undefined,
       buildMessages: (partialOutput) => buildMessages(promptInput, partialOutput),
       parse: (content) => parseAiReport(content, request.mode, input.language),
       fetch:
-        request.provider === "custom"
+        provider === "custom"
           ? (deps.customFetch ?? ((url, init) => safeFetch(url, init, { allowPrivate: config.allowPrivateEndpoints })))
           : deps.fetch,
       now,

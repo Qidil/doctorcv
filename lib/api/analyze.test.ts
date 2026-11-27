@@ -42,9 +42,12 @@ const CV_BYTES = makePdf([
 
 const CONFIG: AnalyzeConfig = {
   serverApiKey: "server-key",
+  serverProvider: "openrouter",
+  serverBaseUrl: null,
   primaryModel: "openrouter/free",
   fallbackModels: [...DEFAULT_FREE_MODELS],
   budgetMs: 120_000,
+  customBudgetMs: 240_000,
   dailyLimit: 10,
   hourlyRequestLimit: 20,
   quotaSecret: "test-secret",
@@ -177,7 +180,7 @@ describe("runAnalysis", () => {
     }
     const result = await runAnalysis(
       input({ authorization: "Bearer sk-or-v1-user-key", customModel: "anthropic/claude-3.5-haiku" }),
-      dependencies,
+      { ...dependencies, fetch: ai.fetch },
     );
 
     expect(result.meta).toMatchObject({ modelUsed: "anthropic/claude-3.5-haiku", quota: null });

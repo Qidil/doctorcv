@@ -73,6 +73,14 @@ describe("provider requests (ADR-009)", () => {
     expect(() => call("custom")).toThrow();
   });
 
+  it("omits sampling temperature from custom requests", () => {
+    expect(call("custom", "https://api.example.com/v1").body).toEqual({
+      model: "test-model",
+      messages: MESSAGES,
+      max_tokens: 8192,
+    });
+  });
+
   it("names the app and sends the analysis session to a custom endpoint, which OpenCode Go requires (B7-01)", () => {
     const { headers } = call("custom", "https://opencode.ai/zen/go/v1", "session-1");
     expect(headers).toMatchObject({

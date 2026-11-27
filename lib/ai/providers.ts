@@ -193,6 +193,7 @@ const customHeaders = (sessionId: string | undefined): Record<string, string> =>
 });
 
 const standardParameters = () => ({ temperature: TEMPERATURE, max_tokens: MAX_OUTPUT_TOKENS });
+const customParameters = () => ({ max_tokens: MAX_OUTPUT_TOKENS });
 
 interface AnthropicBody {
   content?: Array<{ type?: unknown; text?: unknown }>;
@@ -270,7 +271,7 @@ export const PROVIDERS: Readonly<Record<KeyProvider, ProviderAdapter>> = {
       }
       return `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
     },
-    standardParameters,
+    customParameters,
     customHeaders,
   ),
 };

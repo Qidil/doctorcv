@@ -60,8 +60,17 @@ tersedia dalam bahasa Inggris dan bahasa Indonesia.
   mengenali OpenRouter, OpenAI, Anthropic, Google Gemini, Groq, Mistral, DeepSeek, xAI, Perplexity,
   Fireworks, Cerebras, Hugging Face, dan NVIDIA dari key (atau modelnya), lalu tahu ke mana harus
   mengirimnya. Untuk provider lain yang kompatibel dengan OpenAI, atau server model milik Anda sendiri,
-  tambahkan alamat endpoint-nya. Kuota gratis selalu memakai OpenRouter key milik aplikasi, dan hanya
-  kuota itu yang punya batas harian.
+   tambahkan alamat endpoint-nya. Kuota gratis selalu memakai OpenRouter key milik aplikasi, dan hanya
+   kuota itu yang punya batas harian.
+- Pengecekan key dari browser bergantung pada CORS provider dan endpoint yang bisa diakses browser. Beberapa
+  provider kustom dapat menampilkan "Kunci ini tidak bisa dicek dari browser" walaupun analisis berhasil; key
+  tetap bisa disimpan dan dipakai. Endpoint 9router lokal dapat lolos pengecekan key tetapi tetap tidak tersedia
+  saat analisis, bergantung pada routing upstream dan bentuk responsnya.
+- Provider BYOK yang dikenali adalah OpenRouter, OpenAI, Anthropic, Google Gemini, Groq, Mistral, DeepSeek,
+  xAI, Perplexity, Fireworks, Cerebras, Hugging Face, dan NVIDIA. Provider lain yang kompatibel dengan OpenAI
+  dapat memakai BYOK melalui endpoint kustom: buka Pengaturan, isi key dan ID model, isi alamat dasar provider
+  seperti `https://api.example.com/v1`, lalu simpan dan jalankan analisis. Endpoint harus bisa dijangkau server
+  aplikasi; endpoint lokal atau privat memerlukan pemilik deployment mengaktifkan `ALLOW_PRIVATE_ENDPOINTS`.
 
 ## Ke mana data Anda pergi
 
@@ -91,7 +100,7 @@ didukung dan diuji. Dikembangkan dengan Node.js 24.22.1 dan npm 12.1.0.
 git clone https://github.com/Qidil/doctorcv.git
 cd doctorcv
 npm install
-cp .env.example .env.local   # lalu isi minimal OPENROUTER_API_KEY
+cp .env.example .env.local   # lalu isi SERVER_API_KEY, SERVER_PROVIDER, dan SERVER_MODEL
 npm run dev
 ```
 
@@ -105,15 +114,30 @@ Semua variabel bersifat opsional saat pengembangan. `.env.example` mencantumkann
 
 | Variabel | Bawaan | Fungsi |
 | --- | --- | --- |
-| `OPENROUTER_API_KEY` | tidak ada | Key di balik kuota gratis. Tanpa key ini, hanya API key pribadi yang bisa menganalisis. |
-| `OPENROUTER_MODEL` | `openrouter/free` | Model pertama dalam rantai. |
-| `OPENROUTER_FREE_MODELS` | daftar di `lib/api/config.ts` | Model cadangan dipisah koma, dicoba berurutan. |
-| `OPENROUTER_TIMEOUT_MS` | `120000` | Batas waktu satu analisis untuk seluruh rantai model. |
+| `SERVER_API_KEY` | tidak ada | Key server di balik kuota harian. Tanpa key ini, hanya API key pribadi yang bisa menganalisis. |
+| `SERVER_PROVIDER` | `openrouter` | Adapter provider untuk key server. |
+| `SERVER_MODEL` | `openrouter/free` | Model pertama dalam rantai. |
+| `SERVER_FALLBACK_MODELS` | sesuai provider | Model cadangan provider yang dipilih, dipisah koma. |
+| `SERVER_BASE_URL` | tidak ada | Wajib hanya saat `SERVER_PROVIDER=custom`. |
+| `SERVER_TIMEOUT_MS` | `120000` | Batas waktu satu analisis untuk seluruh rantai model. |
 | `DAILY_ANALYSIS_LIMIT` | `10` | Analisis kuota gratis per klien per hari, direset pukul 00.00 GMT+8. API key pribadi tidak dihitung. |
 | `HOURLY_REQUEST_LIMIT` | `20` | Permintaan per klien per jam penuh, dengan key apa pun. |
 | `QUOTA_HASH_SECRET` | nilai pengembangan | Rahasia untuk meng-hash IP klien pada penghitung. Wajib di produksi. |
 | `ALLOW_PRIVATE_ENDPOINTS` | `false` | `true` mengizinkan alamat endpoint di Pengaturan memakai HTTP biasa serta host lokal atau jaringan privat, untuk server model milik Anda sendiri. Hanya pada server yang Anda kendalikan. |
+| `TRUSTED_PROXY_HEADERS` | `false` | `true` mempercayai `X-Forwarded-For` dan `X-Real-IP` dari proxy yang Anda kendalikan. Biarkan mati kecuali proxy deployment menimpa header tersebut. |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | tidak ada | Penyimpanan penghitung. `KV_REST_API_URL` dan `KV_REST_API_TOKEN` juga dibaca. Wajib di produksi untuk kuota gratis dan untuk alamat endpoint di Pengaturan. |
+
+Untuk provider kustom di sisi server, isi ketiganya bersama-sama:
+
+```env
+SERVER_PROVIDER=custom
+SERVER_MODEL=model-provider-anda
+SERVER_BASE_URL=https://api.example.com/v1
+```
+
+`SERVER_API_KEY` memasok key server. Jika dipakai, `SERVER_FALLBACK_MODELS` harus berisi model dari provider
+kustom yang sama. Untuk key BYOK pribadi, gunakan Pengaturan; isi key, ID model, dan alamat dasar OpenAI-
+compatible yang sama. Tombol Tes kunci dari browser dapat tidak tersedia bila provider memblokir CORS.
 
 ## Skrip
 
@@ -145,6 +169,8 @@ dipakai. Sebelum deploy publik:
 - Biarkan `ALLOW_PRIVATE_ENDPOINTS` mati. Server model lokal milik pengunjung memang di luar jangkauan
   host, dan menyalakannya akan membiarkan siapa pun memakai host untuk menjangkau jaringan privatnya
   sendiri.
+- Biarkan `TRUSTED_PROXY_HEADERS` mati kecuali reverse proxy tepercaya menimpa header IP klien. Jangan
+  mengaktifkannya bila pengunjung masih bisa mengirim header tersebut sendiri.
 - Tempatkan region fungsi dekat dengan database Upstash, agar setiap panggilan penghitung tetap singkat.
 - Route berjalan hingga 180 detik (`maxDuration`), yang di Vercel Hobby memerlukan Fluid compute.
 - Permintaan dan respons harus tetap di bawah batas 4,5 MB Vercel; batas PDF 4 MB dan anggaran gambar

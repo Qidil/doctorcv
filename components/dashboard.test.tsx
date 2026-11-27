@@ -141,15 +141,15 @@ describe("Dashboard", () => {
     expect(localStorage.getItem(LOCAL_STORAGE_KEYS.activeCvId)).toBe(String(entries[0]?.cv.id));
   });
 
-  it("notes under the result when another model wrote it or its answer was continued (DELTA-51)", async () => {
+  it("hides model identity but keeps failover and continuation notes (DELTA-51)", async () => {
     const outcome = success();
     outcome.response.meta = { ...outcome.response.meta, modelUsed: "model-2", failoverOccurred: true, continuationOccurred: true };
     send.mockResolvedValue(outcome);
     renderWithI18n(<Dashboard />);
     pickFile();
     analyze();
-    expect(await screen.findByText("Model: model-2")).toBeInTheDocument();
-    expect(screen.getByText("The first model could not finish, so the next one in the chain wrote this result.")).toBeInTheDocument();
+    expect(await screen.findByText("The first model could not finish, so the next one in the chain wrote this result.")).toBeInTheDocument();
+    expect(screen.queryByText("Model: model-2")).not.toBeInTheDocument();
     expect(screen.getByText("The AI's answer was cut off once, so it was continued to finish the report.")).toBeInTheDocument();
   });
 

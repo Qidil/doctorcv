@@ -32,7 +32,9 @@ const AI_CONTENT = JSON.stringify({
 let fetchMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
-  vi.stubEnv("OPENROUTER_API_KEY", "server-test-key");
+  vi.stubEnv("SERVER_API_KEY", "server-test-key");
+  vi.stubEnv("SERVER_PROVIDER", "openrouter");
+  vi.stubEnv("SERVER_MODEL", "openrouter/free");
   vi.stubEnv("QUOTA_HASH_SECRET", "route-test-secret");
   for (const name of ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN", "KV_REST_API_URL", "KV_REST_API_TOKEN"]) {
     vi.stubEnv(name, "");
@@ -246,6 +248,8 @@ describe("POST /api/analyze", () => {
 
   it("answers a request over the hourly limit with 429 TOO_MANY_REQUESTS, personal key included", async () => {
     vi.stubEnv("HOURLY_REQUEST_LIMIT", "1");
+    vi.stubEnv("SERVER_API_KEY", "server-test-key");
+    vi.stubEnv("TRUSTED_PROXY_HEADERS", "true");
     const send = () =>
       POST(
         formRequest(

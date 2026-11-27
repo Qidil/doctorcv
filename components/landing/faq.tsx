@@ -18,6 +18,8 @@ export function LandingFaq() {
     { q: t.landing.faq.q2, a: t.landing.faq.a2 },
     { q: t.landing.faq.q3, a: t.landing.faq.a3 },
     { q: t.landing.faq.q4, a: t.landing.faq.a4 },
+    { q: t.landing.faq.q5, a: t.landing.faq.a5 },
+    { q: t.landing.faq.q6, a: t.landing.faq.a6 },
   ];
 
   return (

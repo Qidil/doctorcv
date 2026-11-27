@@ -132,9 +132,7 @@ export function ResultView({
         <SuggestionList suggestions={view.suggestions} link={link} />
         {view.mode === "mode-b" && view.jobs.length > 0 ? <DrawablyDivider /> : null}
         {view.mode === "mode-b" ? <JobList jobs={view.jobs} /> : null}
-        {/* A custom model ID can be one long unbroken string, so it may wrap anywhere (G-13). */}
         <div className="space-y-1 text-small text-muted">
-          <p className="break-words">{fillTemplate(t.results.model, { model: view.modelUsed })}</p>
           {view.failoverOccurred ? <p>{t.results.failoverNote}</p> : null}
           {view.continuationOccurred ? <p>{t.results.continuationNote}</p> : null}
         </div>

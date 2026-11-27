@@ -5,9 +5,12 @@ describe("readConfig", () => {
   it("falls back to the documented defaults", () => {
     expect(readConfig({})).toEqual({
       serverApiKey: null,
+      serverProvider: "openrouter",
+      serverBaseUrl: null,
       primaryModel: "openrouter/free",
       fallbackModels: [...DEFAULT_FREE_MODELS],
       budgetMs: 120_000,
+      customBudgetMs: 240_000,
       dailyLimit: 10,
       hourlyRequestLimit: 20,
       quotaSecret: null,
@@ -20,10 +23,13 @@ describe("readConfig", () => {
 
   it("reads and trims every value", () => {
     const config = readConfig({
-      OPENROUTER_API_KEY: " key ",
-      OPENROUTER_MODEL: "google/gemma-4-31b-it:free",
-      OPENROUTER_FREE_MODELS: " a:free , ,b:free ",
-      OPENROUTER_TIMEOUT_MS: "90000",
+      SERVER_API_KEY: " key ",
+      SERVER_PROVIDER: "openai",
+      SERVER_MODEL: "gpt-4o-mini",
+      SERVER_FALLBACK_MODELS: " gpt-4.1-mini , ,gpt-4o ",
+      SERVER_TIMEOUT_MS: "90000",
+      CUSTOM_PROVIDER_TIMEOUT_MS: "180000",
+      SERVER_BASE_URL: " https://api.example.com/v1 ",
       DAILY_ANALYSIS_LIMIT: "5",
       HOURLY_REQUEST_LIMIT: "30",
       QUOTA_HASH_SECRET: "secret",
@@ -35,9 +41,12 @@ describe("readConfig", () => {
 
     expect(config).toEqual({
       serverApiKey: "key",
-      primaryModel: "google/gemma-4-31b-it:free",
-      fallbackModels: ["a:free", "b:free"],
+      serverProvider: "openai",
+      serverBaseUrl: "https://api.example.com/v1",
+      primaryModel: "gpt-4o-mini",
+      fallbackModels: ["gpt-4.1-mini", "gpt-4o"],
       budgetMs: 90_000,
+      customBudgetMs: 180_000,
       dailyLimit: 5,
       hourlyRequestLimit: 30,
       quotaSecret: "secret",
@@ -61,7 +70,7 @@ describe("readConfig", () => {
   });
 
   it("ignores numbers that are not positive integers", () => {
-    const config = readConfig({ OPENROUTER_TIMEOUT_MS: "-1", DAILY_ANALYSIS_LIMIT: "sepuluh", HOURLY_REQUEST_LIMIT: "0" });
+    const config = readConfig({ SERVER_TIMEOUT_MS: "-1", DAILY_ANALYSIS_LIMIT: "sepuluh", HOURLY_REQUEST_LIMIT: "0" });
 
     expect(config.budgetMs).toBe(120_000);
     expect(config.dailyLimit).toBe(10);

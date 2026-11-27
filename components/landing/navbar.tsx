@@ -24,6 +24,7 @@ export function LandingNavbar() {
     { href: "#how-it-works", label: t.landing.navEngine },
     { href: "#rubric", label: t.landing.navRubric },
     { href: "#privacy", label: t.landing.navPrivacy },
+    { href: "#providers", label: t.landing.navProviders },
     { href: "#faq", label: t.landing.navFaq },
   ];
 

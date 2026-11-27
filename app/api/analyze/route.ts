@@ -4,8 +4,8 @@ import { ApiError, errorResponse, toApiError } from "@/lib/api/errors";
 import { negotiateLanguage } from "@/lib/i18n/language";
 import { ANALYZE_FIELDS } from "@/types/api";
 
-/** 20 s extraction + the 120 s AI budget + margin; fits Vercel Hobby with Fluid compute (300 s). */
-export const maxDuration = 180;
+/** 20 s extraction + the bounded 240 s custom budget + margin. */
+export const maxDuration = 300;
 
 /** Vercel refuses larger bodies before this code runs; self-hosted servers get the same cap here. */
 const MAX_REQUEST_BYTES = 4_500_000;

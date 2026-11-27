@@ -236,6 +236,27 @@ describe("runModelChain per-call cap (rules.md §4.2.2)", () => {
       vi.useRealTimers();
     }
   });
+
+  it("uses custom per-call budget instead of the recognized-provider cap", async () => {
+    vi.useFakeTimers();
+    try {
+      const { calls, promise } = chain([hanging, completion(VALID)], {
+        provider: PROVIDERS.custom,
+        baseUrl: "https://api.example.com/v1",
+        budgetMs: 180_000,
+        maxCallMs: 120_000,
+      });
+
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(calls).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(59_999);
+      expect(calls).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(1);
+      await expect(promise).resolves.toMatchObject({ modelUsed: "model-2", failoverOccurred: true });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe("runModelChain with one model of another provider (ADR-009)", () => {

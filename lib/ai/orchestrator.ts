@@ -22,6 +22,7 @@ export interface ModelChainOptions<T> {
   /** rules.md §4.2.1: one model called twice would answer a 400 or a 429 the same way, so either ends the run. */
   stopOnModelError?: boolean;
   budgetMs: number;
+  maxCallMs?: number;
   /** Receives the last cut-off output, or null for a normal request. */
   buildMessages: (partialOutput: string | null) => ChatMessage[];
   /** Throws when the content is not a usable report. */
@@ -62,7 +63,7 @@ export async function runModelChain<T>(options: ModelChainOptions<T>): Promise<M
     if (remaining <= 0) {
       throw new ApiError("NETWORK_TIMEOUT");
     }
-    const callMs = Math.min(remaining, MAX_CALL_MS);
+    const callMs = Math.min(remaining, options.maxCallMs ?? MAX_CALL_MS);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), callMs);
     const callSignal = options.signal ? AbortSignal.any([controller.signal, options.signal]) : controller.signal;

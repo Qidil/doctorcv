@@ -60,6 +60,15 @@ English and Indonesian.
   Face, and NVIDIA from the key (or the model) and knows where to send it. For any other OpenAI-compatible
   provider, or a model server of your own, add its endpoint address. The free quota itself always runs on
   the app's OpenRouter key, and only it has a daily limit.
+- Browser key checks depend on provider CORS and browser-accessible endpoints. Some custom providers can show
+  "This key could not be checked from the browser" even when analysis works; the key can still be saved and used.
+  A local 9router endpoint may pass its browser key check but still be unavailable during analysis, depending on
+  its upstream routing and response behavior.
+- Recognized BYOK providers are OpenRouter, OpenAI, Anthropic, Google Gemini, Groq, Mistral, DeepSeek, xAI,
+  Perplexity, Fireworks, Cerebras, Hugging Face, and NVIDIA. Other OpenAI-compatible providers can use BYOK
+  through a custom endpoint: open Settings, enter the key and model ID, enter the provider base URL such as
+  `https://api.example.com/v1`, then save and analyze. The endpoint must be reachable by this app's server;
+  local or private endpoints require the deployment owner to enable `ALLOW_PRIVATE_ENDPOINTS`.
 
 ## Where your data goes
 
@@ -89,7 +98,7 @@ tested. Developed on Node.js 24.22.1 with npm 12.1.0.
 git clone https://github.com/Qidil/doctorcv.git
 cd doctorcv
 npm install
-cp .env.example .env.local   # then fill in OPENROUTER_API_KEY at least
+cp .env.example .env.local   # then fill in SERVER_API_KEY, SERVER_PROVIDER, and SERVER_MODEL
 npm run dev
 ```
 
@@ -103,15 +112,30 @@ Every variable is optional in development. `.env.example` lists them with commen
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `OPENROUTER_API_KEY` | none | The key behind the free quota. Without it, only personal keys can analyze. |
-| `OPENROUTER_MODEL` | `openrouter/free` | First model of the chain. |
-| `OPENROUTER_FREE_MODELS` | list in `lib/api/config.ts` | Comma-separated fallback models, tried in order. |
-| `OPENROUTER_TIMEOUT_MS` | `120000` | Time budget for one analysis across the whole chain. |
+| `SERVER_API_KEY` | none | The server key behind the daily quota. Without it, only personal keys can analyze. |
+| `SERVER_PROVIDER` | `openrouter` | Provider adapter for the server key. |
+| `SERVER_MODEL` | `openrouter/free` | First model of the server chain. |
+| `SERVER_FALLBACK_MODELS` | provider-dependent | Comma-separated fallback models for the selected provider. |
+| `SERVER_BASE_URL` | none | Base URL required only for `SERVER_PROVIDER=custom`. |
+| `SERVER_TIMEOUT_MS` | `120000` | Time budget for one analysis across the whole chain. |
 | `DAILY_ANALYSIS_LIMIT` | `10` | Free-quota analyses per client per day, reset at 00:00 GMT+8. Personal keys are not counted. |
 | `HOURLY_REQUEST_LIMIT` | `20` | Requests per client per clock hour, with any key. |
 | `QUOTA_HASH_SECRET` | development value | Secret for hashing client IPs in the counters. Required in production. |
 | `ALLOW_PRIVATE_ENDPOINTS` | `false` | `true` lets endpoint addresses in Settings use plain HTTP and local or private-network hosts, for a model server of your own. Only on a server you control. |
+| `TRUSTED_PROXY_HEADERS` | `false` | `true` trusts `X-Forwarded-For` and `X-Real-IP` from a proxy you control. Leave it off unless the deployment proxy overwrites those headers. |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | none | The counters' store. `KV_REST_API_URL` and `KV_REST_API_TOKEN` are read too. Required in production for the free quota and for endpoint addresses in Settings. |
+
+For a server-side custom provider, set all three values together:
+
+```env
+SERVER_PROVIDER=custom
+SERVER_MODEL=your-provider-model
+SERVER_BASE_URL=https://api.example.com/v1
+```
+
+`SERVER_API_KEY` supplies the server key. `SERVER_FALLBACK_MODELS`, when used, must contain models from
+that same custom provider. For a personal BYOK key, use Settings instead; enter the key, model ID, and the
+same OpenAI-compatible base URL. The browser Test key action may be unavailable when the provider blocks CORS.
 
 ## Scripts
 
@@ -140,6 +164,8 @@ The app targets Vercel; any Node.js host that runs Next.js 16 should work. Befor
   an endpoint without the hourly limit would let anyone use the host to relay requests.
 - Leave `ALLOW_PRIVATE_ENDPOINTS` off. A visitor's local model server is out of the host's reach anyway,
   and turning it on would let anyone use the host to reach its own private network.
+- Leave `TRUSTED_PROXY_HEADERS` off unless a trusted reverse proxy overwrites client IP headers. Never enable
+  it on a deployment where visitors can send those headers themselves.
 - Put the function region next to the Upstash database, so each counter call stays short.
 - The route runs for up to 180 seconds (`maxDuration`), which on Vercel Hobby needs Fluid compute.
 - Requests and responses must stay under Vercel's 4.5 MB limit; the 4 MB PDF cap and the page image budget
